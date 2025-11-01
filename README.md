@@ -38,6 +38,27 @@ Notes :
 - Testez-le d'abord dans une VM ou un conteneur Arch/Manjaro.
 - Vous pouvez lire le fichier `setup.sh` et adapter la liste de paquets avant exécution.
 
+## Ubuntu / Debian (script `ubuntu.sh`)
+
+Ce dépôt contient également un script dédié pour les systèmes basés sur Debian/Ubuntu : `ubuntu.sh`.
+
+- Emplacement : `./ubuntu.sh` (dans le même dossier racine que `setup.sh`).
+- Objectif : automatiser la mise à jour du système et l'installation d'outils de développement courants (Docker, Node.js, Python, OpenJDK, PHP, MySQL, Zsh/Oh My Zsh, Steam, etc.).
+
+Usage recommandé :
+
+```bash
+# Exécuter avec bash et sudo
+bash ./ubuntu.sh
+```
+
+Notes :
+- Le script utilise `sudo` pour les installations et la configuration de services (Docker, systemctl).
+- L'ajout de l'utilisateur au groupe `docker` nécessite une déconnexion/reconnexion pour prendre effet.
+- Oh My Zsh est installé en mode non interactif si possible ; `chsh` est appelé pour changer le shell par défaut.
+- Relisez le script avant exécution, et testez-le d'abord dans une VM si nécessaire.
+
+
 ## Pull request
 
 Branche créée : `feature/setup-script` (PR proposée). Titre suggéré : `feat: ajouter script d'installation (setup.sh)`.
