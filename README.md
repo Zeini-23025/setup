@@ -59,6 +59,27 @@ Notes :
 - Relisez le script avant exécution, et testez-le d'abord dans une VM si nécessaire.
 
 
+## Fedora / RHEL (script `fedora.sh`)
+
+Ce dépôt contient également un script dédié pour les systèmes basés sur Fedora/RHEL : `fedora.sh`.
+
+- Emplacement : `./fedora.sh` (dans le même dossier racine que `setup.sh`).
+- Objectif : automatiser la mise à jour du système et l'installation d'outils de développement courants (Docker, Node.js, Python, OpenJDK, PHP, MySQL, Zsh/Oh My Zsh, Steam, etc.) en utilisant `dnf`.
+
+Usage recommandé :
+
+```bash
+# Rendre exécutable puis lancer
+chmod +x ./fedora.sh
+bash ./fedora.sh
+```
+
+Notes :
+- Le script utilise `sudo` / `dnf` pour installer des paquets et démarrer des services.
+- L'ajout de l'utilisateur au groupe `docker` nécessite une déconnexion/reconnexion pour prendre effet.
+- Oh My Zsh est installé en mode non interactif si possible ; `chsh` est appelé pour changer le shell par défaut.
+- Relisez le script avant exécution, et testez-le d'abord dans une VM si nécessaire.
+
 ## Pull request
 
 Branche créée : `feature/setup-script` (PR proposée). Titre suggéré : `feat: ajouter script d'installation (setup.sh)`.
