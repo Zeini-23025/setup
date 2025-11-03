@@ -236,4 +236,11 @@ This repository is provided under the MIT License. See `LICENSE` for details.
 [![GitHub](https://img.shields.io/badge/GitHub-Zeini--23025-black?style=flat&logo=github)](https://github.com/Zeini-23025)
 <br>
 
-⭐ **Feel free to give a star if this project helped you!**
+## ℹ️ Final Notes
+
+- These scripts make system-level changes; always read them before running.
+- Use a virtual machine for testing initially.
+
+
+
+## ⭐ **Feel free to give a star if this project helped you!**
