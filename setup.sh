@@ -1,83 +1,188 @@
 #!/usr/bin/env bash
 # ===========================================================
-# 🚀 Setup Script - arch / manjaro
+# 🚀 Arch / Manjaro Setup Script - Version Optimisée
 # ===========================================================
 set -e  # stop on error
 set -u  # treat unset vars as error
 
+# Couleurs pour l'output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
 
-echo " updating system..."
+# Fonction pour logger
+log_info() {
+    echo -e "${GREEN}[✓]${NC} $1"
+}
+
+log_warn() {
+    echo -e "${YELLOW}[!]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[✗]${NC} $1"
+}
+
+# -----------------------------------------------------------
+# 🔄 Mise à jour du système
+# -----------------------------------------------------------
+echo "🔧 Updating system..."
 sudo pacman -Syu --noconfirm
-echo " Installing essential packages..."
+
+# -----------------------------------------------------------
+# 🛠  Packages de base
+# -----------------------------------------------------------
+log_info "Installing essential packages..."
 sudo pacman -S --noconfirm \
     git curl wget unzip zip \
     htop neofetch fastfetch \
     base-devel vim nano \
     sl lolcat
 
-echo " Essential packages installation completed."
-
 # -----------------------------------------------------------
 # 🧠 Installation de yay (AUR helper)
-echo " Installing yay (AUR helper)..."
-sudo pacman -S --noconfirm git base-devel
-cd /tmp
-git clone https://aur.archlinux.org/yay.git
-cd yay
-makepkg -si --noconfirm
+# -----------------------------------------------------------
+if ! command -v yay &> /dev/null; then
+    log_info "Installing yay..."
+    cd /tmp
+    rm -rf yay
+    git clone https://aur.archlinux.org/yay.git
+    cd yay
+    makepkg -si --noconfirm
+    cd ~
+    log_info "yay installed successfully"
+else
+    log_info "yay already installed"
+fi
 
-cd ~
-echo " yay installed successfully"
 # -----------------------------------------------------------
 # 💻 Outils de développement
-echo " Installing development tools..."
-# GCC, Make, CMake
-sudo pacman -S --noconfirm gcc make cmake
-# PHP
-sudo pacman -S --noconfirm php php-apache composer
-# Python
-sudo pacman -S --noconfirm python python-pip
-# OpenJDK 17
-sudo pacman -S --noconfirm jdk17-openjdk
-# Node.js et npm
-sudo pacman -S --noconfirm nodejs npm
-# MySQL
-sudo pacman -S --noconfirm mysql
-# Docker
-sudo pacman -S --noconfirm docker docker-compose
-
-echo " Development tools installation completed."
-
 # -----------------------------------------------------------
-# 🐳 Docker setup
-sudo systemctl start docker
-sudo systemctl enable docker
-sudo usermod -aG docker $USER
-echo " Docker setup completed."
+log_info "Installing development tools..."
+sudo pacman -S --noconfirm \
+    gcc make cmake \
+    php composer \
+    python python-pip \
+    jdk-openjdk \
+    nodejs npm \
+    mariadb docker docker-compose
 
-# -----------------------------------------------------------
-# ⚙️ Zsh + Oh My Zsh
-echo " Installing Oh My Zsh..."
-chsh -s $(which zsh) || true
-if [ ! -d "$HOME/.oh-my-zsh" ]; then
-    RUNZSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+# Configuration MariaDB (optionnel)
+if ! systemctl is-active --quiet mariadb; then
+    log_info "Initializing MariaDB..."
+    sudo mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql 2>/dev/null || true
+    sudo systemctl enable mariadb
+    sudo systemctl start mariadb
+    log_warn "Run 'sudo mysql_secure_installation' to secure MariaDB"
 fi
-# Simple Zsh theme
-sed -i 's/^ZSH_THEME=.*/ZSH_THEME="bira"/' ~/.zshrc
-echo " Oh My Zsh installation completed."
 
 # -----------------------------------------------------------
-# 🧼 Optional: GUI apps
-echo " Installing desktop apps..."
-sudo pacman -S --noconfirm firefox steam
-echo " Desktop apps installation completed."
+# 🌐 Navigateurs & Applications
+# -----------------------------------------------------------
+log_info "Installing desktop apps..."
+sudo pacman -S --noconfirm firefox
 
+# Installation des paquets AUR avec gestion d'erreur
+AUR_PACKAGES=(
+    "visual-studio-code-bin"
+    "postman-bin"
+    "pips.sh-bin"
+    "cava"
+    "steam"
+)
+
+for pkg in "${AUR_PACKAGES[@]}"; do
+    if yay -S --noconfirm "$pkg"; then
+        log_info "$pkg installed"
+    else
+        log_error "$pkg installation failed (continuing...)"
+    fi
+done
 
 # -----------------------------------------------------------
-# steam 
-log_info "Installing Steam..."
-sudo pacman -S --noconfirm steam
-echo " Steam installation completed."
+# ⚙️  Zsh + Oh My Zsh
+# -----------------------------------------------------------
+log_info "Installing Zsh + Oh My Zsh..."
+sudo pacman -S --noconfirm zsh
 
+# Installation Oh My Zsh
+if [ ! -d "$HOME/.oh-my-zsh" ]; then
+    log_info "Installing Oh My Zsh..."
+    export CHSH=no RUNZSH=no
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    log_info "Oh My Zsh installed"
+fi
 
-echo " Setup completed. Please restart your terminal or log out/in for changes to take effect."
+# Configuration du thème
+if [ -f "$HOME/.zshrc" ]; then
+    sed -i 's/^ZSH_THEME=.*/ZSH_THEME="bira"/' ~/.zshrc
+    log_info "Zsh theme configured"
+fi
+
+# Changement du shell par défaut
+if [ "$SHELL" != "$(which zsh)" ]; then
+    chsh -s $(which zsh)
+    log_warn "Zsh will be active after logout/login"
+fi
+
+# Plugins recommandés (optionnel)
+if [ -f "$HOME/.zshrc" ]; then
+    if ! grep -q "plugins=(git" ~/.zshrc; then
+        sed -i 's/^plugins=.*/plugins=(git docker docker-compose npm node python)/' ~/.zshrc
+        log_info "Zsh plugins configured"
+    fi
+fi
+
+# -----------------------------------------------------------
+# 🐳 Configuration Docker
+# -----------------------------------------------------------
+log_info "Configuring Docker..."
+sudo systemctl enable docker
+sudo systemctl start docker
+
+# Ajout de l'utilisateur au groupe docker
+if ! groups $USER | grep -q docker; then
+    sudo usermod -aG docker $USER
+    log_warn "Logout and login again to use Docker without sudo"
+fi
+
+# -----------------------------------------------------------
+# 🎨 Configuration supplémentaire (optionnel)
+# -----------------------------------------------------------
+log_info "Additional configurations..."
+
+# Git config basique
+if [ ! -f "$HOME/.gitconfig" ]; then
+    read -p "Configure Git? (y/n): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        read -p "Git username: " git_user
+        read -p "Git email: " git_email
+        git config --global user.name "$git_user"
+        git config --global user.email "$git_email"
+        log_info "Git configured"
+    fi
+fi
+
+# -----------------------------------------------------------
+# 🧼 Nettoyage
+# -----------------------------------------------------------
+log_info "Cleaning up..."
+yay -Yc --noconfirm
+sudo pacman -Scc --noconfirm
+
+# -----------------------------------------------------------
+# 🎉 Terminé
+# -----------------------------------------------------------
+echo ""
+echo "╔════════════════════════════════════════╗"
+echo "║  ✅ Installation terminée avec succès! ║"
+echo "╚════════════════════════════════════════╝"
+echo ""
+log_warn "Actions recommandées:"
+echo "  1. Redémarre ton système: reboot"
+echo "  2. Lance MariaDB secure: sudo mysql_secure_installation"
+echo "  3. Configure ton .zshrc selon tes préférences"
+echo ""
+echo "🚀 Profite bien de ton nouveau setup!"
