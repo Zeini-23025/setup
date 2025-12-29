@@ -34,9 +34,11 @@ sudo pacman -Syu --noconfirm
 # 🛠  Packages de base
 # -----------------------------------------------------------
 log_info "Installing essential packages..."
+# Note: neofetch wasn't available via pacman in this environment;
+# using fastfetch instead (lightweight and available in repos)
 sudo pacman -S --noconfirm \
     git curl wget unzip zip \
-    htop neofetch fastfetch \
+    htop fastfetch \
     base-devel vim nano \
     sl lolcat
 
